@@ -3,7 +3,7 @@ const character = {
   fileNumber: "004",
   name: "SEO CHAE-YEON",
   koreanName: "서채연",
-  image: "",                       // 사진 경로를 넣으면 즉시 교체됩니다. 예: "images/kang.jpg"
+  image: ["images/portrait-1.png", "images/portrait-2.png"],   // 문자열 1개 또는 배열 모두 가능. 2장 이상이면 천천히 교차 전환됩니다
   status: "Active",
   age: 27,
   gender: "Female",
@@ -80,13 +80,31 @@ document.querySelectorAll("[data-bind]").forEach(el => {
 
 document.title = "Personnel Files — " + c.name;
 
-// 이미지
-if (c.image) {
-  const img = $("portraitImg");
-  img.onload = () => { img.hidden = false; $("placeholder").hidden = true; };
-  img.onerror = () => { img.hidden = true; $("placeholder").hidden = false; };
-  img.alt = c.name;
-  img.src = c.image;
+// 이미지 (문자열 1개 또는 배열)
+const imgs = [].concat(c.image).filter(Boolean);
+if (imgs.length) {
+  const base = $("portraitImg");
+  const els = [base];
+  imgs.slice(1).forEach(() => {
+    const e = document.createElement("img");
+    e.className = "alt"; e.hidden = true; e.alt = c.name;
+    base.parentNode.insertBefore(e, $("placeholder"));
+    els.push(e);
+  });
+  els.forEach((e, i) => {
+    e.alt = c.name;
+    e.onload = () => { e.hidden = false; if (i === 0) { e.classList.add("on"); $("placeholder").hidden = true; } };
+    e.onerror = () => { e.hidden = true; if (i === 0) $("placeholder").hidden = false; };
+    e.src = imgs[i];
+  });
+  if (els.length > 1 && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    let cur = 0;
+    setInterval(() => {
+      const next = (cur + 1) % els.length;
+      if (els[next].hidden) return;
+      els[cur].classList.remove("on"); els[next].classList.add("on"); cur = next;
+    }, 7000);
+  }
 }
 
 const h = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.textContent = html; return e; };
